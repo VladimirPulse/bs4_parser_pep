@@ -4,25 +4,15 @@ import re
 from urllib.parse import urljoin
 
 import requests_cache
-from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import (configure_argument_parser, configure_logging,
                      pep_status_logging)
-from constants import (BASE_DIR, DOWNLOADS, EXPECTED_STATUS,
-                       MAIN_DOC_URL, MAIN_PEP_URL, PEP_STATUS,
-                       RESULTS)
+from constants import (BASE_DIR, DOWNLOADS, EXPECTED_STATUS, MAIN_DOC_URL,
+                       MAIN_PEP_URL, PEP_STATUS, RESULTS)
 from exceptions import IsNoneRespons
 from outputs import control_output
-from utils import find_tag, get_response
-
-
-def generate_soup(session, url):
-    try:
-        response = get_response(session, url)
-        return BeautifulSoup(response.text, 'lxml')
-    except IsNoneRespons:
-        raise 'Возникла ошибка при загрузке страницы'
+from utils import find_tag, generate_soup
 
 
 def whats_new(session):
@@ -37,8 +27,9 @@ def whats_new(session):
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
         version_link = urljoin(whats_new_url, version_a_tag['href'])
-        soup = generate_soup(session, version_link)
-        if soup is None:
+        try:
+            soup = generate_soup(session, version_link)
+        except IsNoneRespons:
             messege_error.append(f'Не получен ответ на {version_link}')
             continue
         h1 = find_tag(soup, 'h1')
@@ -93,7 +84,6 @@ def download(session):
     response = session.get(archive_url)
     with open(archive_path, 'wb') as file:
         file.write(response.content)
-    print(filename)
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
@@ -120,9 +110,14 @@ def pep(session):
     status_counts = {}
     total_peps = 0
     mismatched_statuses = []
+    messege_error = []
     for pep_url in tqdm(result):
         if pep_url != 'pep-0000/':
-            page_status = page_pep_status(pep_url)
+            try:
+                page_status = page_pep_status(pep_url)
+            except IsNoneRespons:
+                messege_error.append(f'Не получен ответ на {pep_url}')
+                continue
             first_column_tag = find_tag(soup, 'a', {'href': pep_url})
             preview_status = first_column_tag.find_previous('abbr').text[1:]
             if page_status not in EXPECTED_STATUS.get(preview_status, []):
@@ -134,6 +129,8 @@ def pep(session):
                 })
             status_counts[page_status] = status_counts.get(page_status, 0) + 1
             total_peps += 1
+    if messege_error:
+        logging.exception('\n'.join(messege_error))
     if mismatched_statuses:
         pep_status_logging(mismatched_statuses)
     result_dir = BASE_DIR / RESULTS
