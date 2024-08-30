@@ -4,13 +4,13 @@ import logging
 
 from prettytable import PrettyTable
 
-from constants import BASE_DIR, DATETIME_FORMAT, OUTPUT_MODES, RESULTS
+from constants import BASE_DIR, DATETIME_FORMAT, FILE, PRETTY, RESULTS
 
 
 def control_output(results, cli_args):
     output_functions = {
-        OUTPUT_MODES[0]: lambda results: pretty_output(results),
-        OUTPUT_MODES[1]: lambda results: file_output(results, cli_args),
+        PRETTY: lambda results: pretty_output(results),
+        FILE: lambda results: file_output(results, cli_args),
         'default': lambda results: default_output(results)
     }
     output_function = output_functions.get(

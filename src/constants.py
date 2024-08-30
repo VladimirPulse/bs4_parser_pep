@@ -20,7 +20,8 @@ RESULTS = 'results'
 PEP_STATUS = 'pep_status.csv'
 
 '''Константы для функций'''
-OUTPUT_MODES = ('pretty', 'file')
+PRETTY = 'pretty'
+FILE = 'file'
 EXPECTED_STATUS = {
     'A': ('Active', 'Accepted'),
     'D': ('Deferred',),

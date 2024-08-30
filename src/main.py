@@ -10,7 +10,6 @@ from configs import (configure_argument_parser, configure_logging,
                      pep_status_logging)
 from constants import (BASE_DIR, DOWNLOADS, EXPECTED_STATUS, MAIN_DOC_URL,
                        MAIN_PEP_URL, PEP_STATUS, RESULTS)
-from exceptions import IsNoneRespons
 from outputs import control_output
 from utils import find_tag, generate_soup
 
@@ -29,7 +28,7 @@ def whats_new(session):
         version_link = urljoin(whats_new_url, version_a_tag['href'])
         try:
             soup = generate_soup(session, version_link)
-        except IsNoneRespons:
+        except ConnectionError:
             messege_error.append(f'Не получен ответ на {version_link}')
             continue
         h1 = find_tag(soup, 'h1')
@@ -52,7 +51,7 @@ def latest_versions(session):
             a_tags = ul.find_all('a')
             break
     else:
-        raise IsNoneRespons('Не найден список c версиями Python')
+        raise ConnectionError('Не найден список c версиями Python')
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
     for a_tag in a_tags:
@@ -115,7 +114,7 @@ def pep(session):
         if pep_url != 'pep-0000/':
             try:
                 page_status = page_pep_status(pep_url)
-            except IsNoneRespons:
+            except ConnectionError:
                 messege_error.append(f'Не получен ответ на {pep_url}')
                 continue
             first_column_tag = find_tag(soup, 'a', {'href': pep_url})
