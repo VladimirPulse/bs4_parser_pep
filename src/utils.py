@@ -1,8 +1,9 @@
 import logging
 
 from bs4 import BeautifulSoup
+from requests import RequestException
 
-from exceptions import IsNoneRespons, ParserFindTagException
+from exceptions import ParserFindTagException
 
 
 def get_response(session, url, encoding='utf-8'):
@@ -10,20 +11,15 @@ def get_response(session, url, encoding='utf-8'):
         response = session.get(url)
         response.encoding = encoding
         return response
-    except ConnectionError as e:
-        raise IsNoneRespons(
+    except RequestException as e:
+        raise ConnectionError(
             f'Ошибка при загрузке страницы {url}: {str(e)}'
         ) from e
 
 
 def generate_soup(session, url):
-    try:
-        response = get_response(session, url)
-        if response is None:
-            raise IsNoneRespons("Возникла ошибка при загрузке страницы")
-        return BeautifulSoup(response.text, 'lxml')
-    except IsNoneRespons:
-        raise
+    response = get_response(session, url)
+    return BeautifulSoup(response.text, 'lxml')
 
 
 def find_tag(soup, tag, attrs=None):

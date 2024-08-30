@@ -3,4 +3,4 @@ class ParserFindTagException(Exception):
 
 
 class IsNoneRespons(Exception):
-    """Вызывается когда нет ответа на запрос."""
+    """Вызывается, когда нет ответа на запрос."""
